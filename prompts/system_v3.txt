@@ -85,7 +85,7 @@ Concave rise (decelerating, d²F/dt² < 0):
   Look for: steepest slope in early rise, flattening near peak.
   Hint: in per-phase Phase column (Section 2.3),
   negative early → approaching zero = concave (TDE-like).
-  Plateau at peak.
+  slow at peak.
 
 
 Convex rise (accelerating, d²F/dt² > 0):
