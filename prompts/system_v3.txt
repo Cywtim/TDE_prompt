@@ -85,6 +85,8 @@ Concave rise (decelerating, d²F/dt² < 0):
   Look for: steepest slope in early rise, flattening near peak.
   Hint: in per-phase Phase column (Section 2.3),
   negative early → approaching zero = concave (TDE-like).
+  Plateau at peak.
+
 
 Convex rise (accelerating, d²F/dt² > 0):
   → favors SN
@@ -104,7 +106,7 @@ Total span:
 
 ### 3. Decline Shape
 - Steep power-law decline (>1 uJy/d sustained): favors TDE
-- Plateau or fast decline (<0.1 uJy/d): favors SN
+- fast decline (<0.1 uJy/d): favors SN
 
 ### 4. Data Quality
 - Total points < 10: sparse data — signals inherently weaker. Use low score (0.3-0.5) rather than defaulting to Unsure
