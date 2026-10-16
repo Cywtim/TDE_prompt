@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "temporary_TEST_reload",
+    "name": "test",
+    "positive_criteria": "这是一段非常长的判据文本，用来测试前端截断显示效果。包含很多内容：光变曲线是否呈现幂律衰减、是否有早期凸起特征、颜色是否偏蓝、宿主星系类型、绝对星等范围、红移约束、宽发射线存在与否、X射线对应体等等。这段文字应该超过两行，从而触发二行省略号截断。继续补充更多细节让文本足够长。",
+    "fewshot": [],
+    "collections": [
+      "wumx"
+    ]
+  },
+  {
+    "id": "temporary_test",
+    "name": "temporary_test",
+    "positive_criteria": "",
+    "fewshot": [],
+    "collections": [
+      "wangyb"
+    ]
+  }
+]

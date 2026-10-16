@@ -96,7 +96,7 @@ ZTF Lasair    →  ztf_adapter.py  ─┤
 
 > **⚠️ RA/Dec, Gaia Sep, WISE are NOT in the prompt by default.** `generate_md()` only includes light-curve-derived features. Registry metadata (`gaia_sep`, `w1mag`, `w2mag`, `w1_w2`) must be injected via the standalone `enrich_analysis.py` script. See `references/enrich-analysis-registry-md.md`.
 
-> **Re-plotting a source without its original npy/csv**: extract per-point photometry from the analysis.md Raw Light Curve table (handles both §3 and legacy §4 layouts, avoids the §2.3 table-regex collision). See `references/lightcurve-data-from-md.md`.
+> **Re-plotting a source without its original npy/csv**: extract per-point photometry from the analysis.md Raw Light Curve table (handles both §3 and legacy §4 layouts, avoids the §2.3 table-regex collision). Also covers editing the `plot_fewshot_grid.py` few-shot grid: the "rename legend" vs "swap data source" distinction, and the WFST raw-txt → analysis.md conversion recipe for adding a brand-new source. See `references/lightcurve-data-from-md.md`.
 
 ### Weight control mechanism
 

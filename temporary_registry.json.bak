@@ -1,27 +1,20 @@
 [
   {
-    "id": "temporary_GLOBAL",
-    "name": "temporary_GLOBAL",
-    "positive_criteria": "g",
-    "fewshot": [],
-    "collections": []
-  },
-  {
-    "id": "temporary_LOCALW",
-    "name": "temporary_LOCALW",
-    "positive_criteria": "l",
-    "fewshot": [],
-    "collections": [
-      "wangyb"
-    ]
-  },
-  {
-    "id": "temporary_LOCALM",
-    "name": "temporary_LOCALM",
-    "positive_criteria": "m",
+    "id": "temporary_TEST_reload",
+    "name": "test",
+    "positive_criteria": "test criteria",
     "fewshot": [],
     "collections": [
       "wumx"
+    ]
+  },
+  {
+    "id": "temporary_test",
+    "name": "temporary_test",
+    "positive_criteria": "",
+    "fewshot": [],
+    "collections": [
+      "wangyb"
     ]
   }
 ]
