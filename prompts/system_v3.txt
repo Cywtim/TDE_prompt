@@ -95,7 +95,7 @@ Convex rise (accelerating, d²F/dt² > 0):
 
 Rise duration as secondary check:
   < 10 or 20 days  → favors SN (shock-cooling timescale)
-  20–60 days → typical TDE (fallback timescale)
+  10 or 20–60 days → typical TDE (fallback timescale)
   > 60 days  → check shape: concave still possible TDE; convex = unusual
 
 Total span:
