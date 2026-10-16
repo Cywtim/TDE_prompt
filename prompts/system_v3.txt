@@ -100,11 +100,11 @@ Rise duration as secondary check:
 
 Total span:
   < several 100-days  → favors TDE (t^(-5/3) decay ~months)
-  > 100 to 1000 days → favors SN (Ni decay tail can last years)
+  > 10 to 1000 days → favors SN (Ni decay tail can last years)
 
 ### 3. Decline Shape
 - Steep power-law decline (>1 uJy/d sustained): favors TDE
-- Plateau or very slow decline (<0.1 uJy/d): favors SN
+- Plateau or fast decline (<0.1 uJy/d): favors SN
 
 ### 4. Data Quality
 - Total points < 10: sparse data — signals inherently weaker. Use low score (0.3-0.5) rather than defaulting to Unsure
