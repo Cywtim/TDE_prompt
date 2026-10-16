@@ -100,7 +100,7 @@ Rise duration as secondary check:
 
 Total span:
   < several 100-days  → favors TDE (t^(-5/3) decay ~months)
-  > 1000 days → favors SN (Ni decay tail can last years)
+  > 100 to 1000 days → favors SN (Ni decay tail can last years)
 
 ### 3. Decline Shape
 - Steep power-law decline (>1 uJy/d sustained): favors TDE
