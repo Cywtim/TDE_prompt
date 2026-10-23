@@ -12,6 +12,7 @@ import sys, os, json, random, argparse, base64, re, itertools, threading
 from pathlib import Path
 from datetime import datetime, timezone
 
+import httpx
 from openai import OpenAI
 
 import config
@@ -37,7 +38,16 @@ def _get_client():
     """
     with _KEY_LOCK:
         key = next(_KEY_POOL)
-    return OpenAI(base_url=config.API_BASE_URL, api_key=key, timeout=300)
+    # trust_env 默认 False：不读 shell 的 HTTP_PROXY/HTTPS_PROXY/ALL_PROXY。
+    # 机器上带 socks:// 全局代理时，httpx 会在构造客户端阶段直接抛
+    # "Unknown scheme for proxy URL"，让 CLI 与 TDEweb RLHL 分类全线失败；
+    # 需要走代理时在 .env 设 LLM_TRUST_ENV=true。
+    return OpenAI(
+        base_url=config.API_BASE_URL,
+        api_key=key,
+        timeout=300,
+        http_client=httpx.Client(trust_env=config.TRUST_ENV_PROXY, timeout=300),
+    )
 
 
 # ═══════════════════════════════════════════════════
@@ -307,10 +317,16 @@ def build_prompt(target_id, few_shot, mode="text", cot=False):
 
 MAX_RETRIES = 3
 
-def call_api(messages, model=None, max_tokens=12000):
-    """Call the LLM API and return response text."""
+def call_api(messages, model=None, max_tokens=None):
+    """Call the LLM API and return response text.
+
+    max_tokens: completion budget. None → config.MAX_TOKENS, which reads
+    LLM_MAX_TOKENS from .env (default 12000).
+    """
     if model is None:
         model = config.MODEL
+    if max_tokens is None:
+        max_tokens = config.MAX_TOKENS
     last_error = None
     for attempt in range(MAX_RETRIES):
         try:
@@ -509,7 +525,7 @@ def classify_one(source_id, mode="text", n_shot=None, model=None, force=False, c
         messages[0]["content"] = messages[0]["content"] + temp_section
 
     # Call API
-    raw_text, usage = call_api(messages, model=model, max_tokens=12000)
+    raw_text, usage = call_api(messages, model=model)
 
     # Parse
     parsed = parse_response(raw_text)
@@ -628,7 +644,6 @@ def classify_pipeline(source_id, model=None, cot=False, temporary_collection=Non
 
     raw_text, usage = call_api(
         messages, model=model,
-        max_tokens=12000,
     )
     parsed = parse_response(raw_text)
     if "error" in parsed:

@@ -10,7 +10,7 @@ from classify import sample_few_shot, build_prompt, call_api, parse_response, pr
 
 os.environ.setdefault("NO_PROXY", "api.llm.ustc.edu.cn")
 
-MODEL = "qwen3.6-chat"
+MODEL = config.MODEL  # inherit from .env (LLM_MODEL)
 N_SHOT = 1
 TEST_PER_CLASS = 3
 CLASSES = ["TDE", "SN"]
