@@ -58,3 +58,4 @@ data/
 results_enriched/
 .vscode/
 download_sn.py
+patent_project_integration.md
