@@ -183,8 +183,21 @@ def build_system_section(collection=None):
         "simultaneously, including on top of its base class.",
     ]
     for lb in labels:
-        lines.append(f"- {lb['id']}: POSITIVE — {lb['positive_criteria'] or 'n/a'}")
+        # Collapse newlines/extra whitespace: a multi-line criterion would
+        # otherwise break out of the bullet list, detaching the checkable
+        # clause from the label id (models then treat it as stray prose and
+        # silently match nothing).
+        crit = " ".join(str(lb.get("positive_criteria") or "n/a").split())
+        lines.append(f"- {lb['id']}: POSITIVE — {crit}")
+    lines.append("")
     lines.append("Output format: \"temporary_label\": [\"temporary_xxx\", ...]")
+    # Must stay LAST: models weight the final instruction most heavily. Without
+    # it they abstain whenever the base class is Others/Unsure or the light
+    # curve is sparse — even when a criterion is trivially satisfied.
+    lines.append("Judge each criterion LITERALLY against the data: a sparse light "
+                 "curve, low overall confidence, or an 'Others'/'Unsure' base class "
+                 "is NOT a reason to abstain — if a criterion's stated condition is "
+                 "satisfied, you MUST include that label.")
     return "\n".join(lines)
 
 

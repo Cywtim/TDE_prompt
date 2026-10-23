@@ -16,5 +16,14 @@
     "collections": [
       "wangyb"
     ]
+  },
+  {
+    "id": "temporary_MIBH",
+    "name": "temporary_MIBH",
+    "positive_criteria": "contains g or r band points",
+    "fewshot": [],
+    "collections": [
+      "xuln"
+    ]
   }
 ]

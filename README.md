@@ -207,9 +207,42 @@ When temporary labels apply (globally by default, or scoped via `--collection`):
 - the LLM is asked to output an extra `temporary_label` field (a list of matched
   `temporary_*` ids; may be empty).
 
-The matched temporary labels are saved into the result JSON under `temporary_label`
-(e.g. `["temporary_OVI"]`, or `null` if none / no temp config). Note the base class
-(`class`) is unchanged — temporary labels never replace the main classification.
+The temporary layer is recorded in the result JSON in a self-describing
+`temporary` block, plus the flat `temporary_label` key kept for compatibility:
+
+| field | meaning |
+|---|---|
+| `temporary.collection` | collection the run was scoped to; `null` = layer not applied |
+| `temporary.labels` | **snapshot** of the effective label definitions (id/name/criteria) used for this prompt; empty = layer not applied |
+| `temporary.matched` | ids the model matched, validated against `labels` and de-duplicated; `[]` = layer ran but matched nothing; `null` = layer not applied |
+| `temporary.unknown_matched` | (only if present) ids the model emitted that are **not** in `labels` — hallucinated or stale |
+| `temporary.ignored_matched` | (only if present) model volunteered a temp field although no layer was applied — recorded but NOT honoured |
+| `temporary_label` | flat compatibility key (TDEweb filters on it): same list as `matched`, or `null` when the layer was not applied |
+
+The `labels` snapshot exists because the registry is **mutable** (criteria can be
+edited, labels removed, and a label with empty `collections` applies globally), so
+the collection name alone cannot reproduce why a source was tagged after the fact.
+Note the base class (`classification.label`) is unchanged — temporary labels never
+replace the main classification.
+
+#### How to write a criterion that actually matches
+
+Write each criterion as a **declarative, checkable predicate about the light curve**,
+not as an instruction:
+
+- ✅ `the light curve contains at least one r-band data point`
+- ✅ `g-r color is negative at peak and the decline is faster than 15 days`
+- ❌ `collect all light curves` (an instruction — nothing to check)
+- ❌ `TEST， collect all light curves contains g or r band points` (mixed: the
+  instruction dilutes the checkable clause and the model abstains)
+
+Two robustness measures are built in, because both failure modes were observed in
+practice: criteria are whitespace-collapsed before injection (a multi-line criterion
+would break out of the bullet list and detach from its label id), and the section
+ends with an explicit "judge literally; a sparse light curve or an `Others`/`Unsure`
+base class is NOT a reason to abstain" instruction — without it the model reliably
+returns `temporary_label: []` for sparse sources even when the criterion is trivially
+satisfied.
 
 #### Managing temporary labels (CLI)
 
@@ -270,6 +303,13 @@ Result JSON structure:
   "quality": {
     "overall": "medium",
     "flags": ["Rise phase sparsely sampled"]
+  },
+  "temporary": {
+    "collection": "wangyb",
+    "labels": [
+      {"id": "temporary_OVI", "name": "OVI", "criteria": "OVI emission line present"}
+    ],
+    "matched": ["temporary_OVI"]
   },
   "temporary_label": ["temporary_OVI"],
   "cot": false,

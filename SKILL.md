@@ -547,7 +547,9 @@ python plot.py --all
 19. **`classify.py` `call_api()` must accept `max_tokens` parameter** (FIXED 2026-08-12): The function was `def call_api(messages, model=None)` with hardcoded `max_tokens=6000`. TDEweb's `app_rlhl.py` called it as `call_api(messages, model="...", max_tokens=8000)` in 3 places, which would have raised `TypeError`. **FIX**: Changed signature to `def call_api(messages, model=None, max_tokens=6000)`. TDEweb can now override `max_tokens` (8000 for CoT, 3000 for non-CoT).
 20. **TDEweb `generate_md()` calls must pass `baseline`** (FIXED 2026-08-12): `app_rlhl.py` called `generate_md(source_id, arr_rel, features, label="unknown")` at 3 locations — all omitted `baseline=detect_baseline_per_band(arr)`. This meant analysis.md generated via TDEweb (Remote Classification on WFST collections) lacked §2.5 Baseline Detection, which the system prompt v2 relies on for the PLATEAU gate. **FIX**: Added `baseline = detect_baseline_per_band(arr)` before each `generate_md()` call; updated 3 imports to include `detect_baseline_per_band`. Full audit: `references/tdeweb-integration-pitfalls.md`.
 
-21. **External callers (TDEweb) should use `classify_pipeline()` not raw `sample_few_shot`/`build_prompt`/`call_api`/`parse_response`/`save_result`** (ADDED 2026-08-12): TDEweb had 3 code paths each manually calling all 5 functions + `load_index`. This caused triplicate bugs (missing baseline, wrong `max_tokens`). `classify_pipeline(source_id, model="qwen3.6-chat", cot=False, temporary_collection=None)` encapsulates the full flow into a single call returning `{label, confidence, score, unsure_preference, primary_signal, indicators, flags, tokens, cot_reasoning[, temporary_label]}`. The pipeline internally handles `promt_load_index()`, `sample_few_shot()`, `build_prompt()`, `call_api()`, `parse_response()`, and `save_result()`. The optional `temporary_collection` layers additive `temporary_*` labels on top (empty/falsy ⇒ base version, no behavior change). TDEweb uses this in all 3 paths; adding a new caller means adding one import + one function call. **Temporary-label mechanism, files, UI, and testing: `references/temporary-labels.md`.**
+21. **External callers (TDEweb) should use `classify_pipeline()` not raw `sample_few_shot`/`build_prompt`/`call_api`/`parse_response`/`save_result`** (ADDED 2026-08-12): TDEweb had 3 code paths each manually calling all 5 functions + `load_index`. This caused triplicate bugs (missing baseline, wrong `max_tokens`). `classify_pipeline(source_id, model="qwen3.6-chat", cot=False, temporary_collection=None)` encapsulates the full flow into a single call returning `{label, confidence, score, unsure_preference, primary_signal, indicators, flags, tokens, cot_reasoning, temporary[, temporary_label]}`. The pipeline internally handles `promt_load_index()`, `sample_few_shot()`, `build_prompt()`, `call_api()`, `parse_response()`, and `save_result()`. The optional `temporary_collection` layers additive `temporary_*` labels on top (empty/falsy ⇒ base version, no behavior change). TDEweb uses this in all 3 paths; adding a new caller means adding one import + one function call. **Temporary-label mechanism, files, UI, and testing: `references/temporary-labels.md`.**
+
+22. **`temporary` snapshot block in every result JSON** (ADDED 2026-10-22): `save_result()` records `temporary: {collection, labels[], matched, [unknown_matched], [ignored_matched]}` — the collection scope, a snapshot of the effective label definitions (id/name/criteria) used for that prompt, and the normalised match list. Why: the registry is mutable and a label with empty `collections` applies globally, so recording the collection name alone cannot reproduce why a source was tagged. Semantics: `labels: []` + `matched: null` ⇒ layer not applied; `matched: []` ⇒ ran but matched nothing. Model output is **validated**: ids not in `labels` are dropped into `unknown_matched`; when no layer was applied any volunteered value goes to `ignored_matched` and the flat `temporary_label` key is `null` (never a fake match, since TDEweb filters on it). The flat `temporary_label` key is kept for backward compatibility with TDEweb's filters.
 
 ## Results JSON Schema
 
@@ -562,6 +564,12 @@ python plot.py --all
     ]
   },
   "quality": {"flags": [...]},
+  "temporary": {
+    "collection": "wangyb",
+    "labels": [{"id": "temporary_OVI", "name": "OVI", "criteria": "..."}],
+    "matched": ["temporary_OVI"]
+  },
+  "temporary_label": ["temporary_OVI"],
   "few_shot": [{"id": "...", "label": "TDE"}, ...],
   "cot": false,
   "cot_reasoning": "",

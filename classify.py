@@ -427,7 +427,96 @@ def _result_filename(source_id):
     return f"{source_id}.json"
 
 
-def save_result(source_id, parsed, raw_response, usage, mode, model, few_shot, cot=False):
+def _dedupe(items):
+    """Order-preserving dedupe."""
+    out = []
+    for x in items:
+        if x not in out:
+            out.append(x)
+    return out
+
+
+def _normalise_temp_matched(raw, valid_ids):
+    """Coerce the model's temporary_label output into ids that were in effect.
+
+    The model may emit a string instead of a list, repeat ids, omit the
+    ``temporary_`` prefix, or hallucinate ids that were never registered.
+    Only ids present in `valid_ids` count as matches; the rest are returned
+    separately so the caller can record them instead of silently keeping them.
+
+    Returns (matched, unknown) — both order-preserving and de-duplicated.
+    """
+    if raw is None:
+        return [], []
+    items = raw if isinstance(raw, (list, tuple)) else [raw]
+    matched, unknown = [], []
+    for it in items:
+        if not isinstance(it, str):
+            it = str(it)
+        it = it.strip()
+        if not it:
+            continue
+        if it in valid_ids:
+            matched.append(it)
+        elif f"temporary_{it}" in valid_ids:   # model dropped the prefix
+            matched.append(f"temporary_{it}")
+        else:
+            unknown.append(it)
+    return _dedupe(matched), _dedupe(unknown)
+
+
+def _build_temporary_block(collection, raw_matched):
+    """Snapshot of the temporary layer as it applied to THIS classification.
+
+    The registry is mutable (labels can be edited or removed, and a label with
+    empty `collections` applies globally), so recording the collection name
+    alone cannot reproduce why a source was tagged. This block stores the
+    effective label definitions used for the prompt, plus what the model
+    matched — making each result self-describing and auditable.
+
+    `labels` empty  -> the temporary layer was NOT applied (matched stays None)
+    `matched: []`   -> the layer ran but the model matched nothing
+    """
+    block = {"collection": collection, "labels": [], "matched": None}
+    if not collection:
+        return block
+    try:
+        from temporary import list_temporary_labels
+        labels = list_temporary_labels(collection)
+    except Exception:
+        # temporary.py missing/broken must never break classification.
+        return block
+    block["labels"] = [
+        {"id": lb.get("id"), "name": lb.get("name", ""),
+         "criteria": lb.get("positive_criteria", "")}
+        for lb in labels if lb.get("id")
+    ]
+    if not block["labels"]:
+        return block
+    valid_ids = {lb["id"] for lb in block["labels"]}
+    matched, unknown = _normalise_temp_matched(raw_matched, valid_ids)
+    block["matched"] = matched
+    if unknown:
+        # Hallucinated / stale ids the model emitted but that are not in effect.
+        block["unknown_matched"] = unknown
+    return block
+
+
+def save_result(source_id, parsed, raw_response, usage, mode, model, few_shot, cot=False,
+                collection=None):
+    temp_block = _build_temporary_block(collection, parsed.get("temporary_label"))
+    # Backward-compatible top-level key (TDEweb filters on it). Only honoured
+    # when the layer was actually applied: otherwise the prompt never asked for
+    # temporary labels, so any value the model volunteered is unverified and
+    # must NOT be treated as a match (TDEweb would filter on it).
+    if temp_block["labels"]:
+        top_temp_label = temp_block["matched"]
+    else:
+        top_temp_label = None
+        raw_temp = parsed.get("temporary_label")
+        if raw_temp is not None:
+            # Audit trail: model emitted a temp field although no layer applied.
+            temp_block["ignored_matched"] = raw_temp
     result = {
         "source_id": source_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -441,9 +530,12 @@ def save_result(source_id, parsed, raw_response, usage, mode, model, few_shot, c
         "classification": parsed.get("classification", {}),
         "reasoning": parsed.get("reasoning", {}),
         "quality": parsed.get("quality", {}),
-        # Temporary labels layered on top of the base classification (may be
-        # an empty list / None if the source matched none / no temp config).
-        "temporary_label": parsed.get("temporary_label"),
+        # Temporary layer as it applied to this run: collection + the effective
+        # label definitions used for the prompt + normalised matches.
+        "temporary": temp_block,
+        # Backward-compatible flat key (TDEweb filters on it): [] = layer ran
+        # but matched nothing, None = layer not applied.
+        "temporary_label": top_temp_label,
         "few_shot": [{"id": fs[0], "label": fs[1]} for fs in few_shot],
         "cot": cot,
         "cot_reasoning": _extract_reasoning(raw_response, parsed),
@@ -532,7 +624,8 @@ def classify_one(source_id, mode="text", n_shot=None, model=None, force=False, c
 
     # Save
     result = save_result(source_id, parsed, raw_text, usage, mode,
-                         model or config.MODEL, few_shot, cot=cot)
+                         model or config.MODEL, few_shot, cot=cot,
+                         collection=collection)
 
     # Print summary
     cls_info = result.get("classification", {})
@@ -650,7 +743,8 @@ def classify_pipeline(source_id, model=None, cot=False, temporary_collection=Non
         return {"error": parsed["error"]}
     result = save_result(source_id, parsed, raw_text, usage,
                          mode="multimodal", model=model,
-                         few_shot=few_shot, cot=cot)
+                         few_shot=few_shot, cot=cot,
+                         collection=temporary_collection)
     out = {
         "label": result["classification"].get("label", "?"),
         "confidence": result["classification"].get("confidence", "?"),
@@ -662,10 +756,10 @@ def classify_pipeline(source_id, model=None, cot=False, temporary_collection=Non
         "tokens": result["tokens"],
         "cot_reasoning": result.get("cot_reasoning", ""),
     }
-    # Preserve temporary_label from the parsed output (may be absent → None).
-    temp_label = parsed.get("temporary_label")
-    if temp_label is not None:
-        out["temporary_label"] = temp_label
+    # Temporary layer: expose the normalised snapshot (may be absent → None).
+    out["temporary"] = result["temporary"]
+    if result["temporary_label"] is not None:
+        out["temporary_label"] = result["temporary_label"]
     return out
 
 
