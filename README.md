@@ -29,7 +29,11 @@ ZTF_prompt/
 ├── prompts/             ← external System Prompt files
 │   ├── system_v1.txt        ← Prompt v1
 │   ├── system_v2.txt        ← Prompt v2
-│   ├── system_v3.txt        ← Prompt v3 (current default)
+│   ├── system_v3.txt        ← Prompt v3
+│   ├── system_v4.txt        ← Prompt v4 (current default) = v3 + STAR/GALAXY cutout
+│   │                           morphology gate (§0.5); records `reasoning.image_morphology`
+│   │                           (incl. nested `host_galaxy` block) + closed `quality.flags`
+│   │                           vocabulary. Fallback to v3 with PROMPT_VERSION=v3
 │   └── cot.txt              ← Chain-of-Thought additional instructions
 ├── templates/           ← Few-shot exemplar configuration files
 │   ├── fewshot.json          ← default exemplars (TDE+SN each ×1)

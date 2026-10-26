@@ -517,6 +517,13 @@ def save_result(source_id, parsed, raw_response, usage, mode, model, few_shot, c
         if raw_temp is not None:
             # Audit trail: model emitted a temp field although no layer applied.
             temp_block["ignored_matched"] = raw_temp
+    # Cutout morphology (v4+): STAR/GALAXY verdict + nested host-galaxy block. These
+    # keys used to be dropped silently from the saved result, so `host_galaxy` always
+    # read back as null even when the model filled it. v3 prompts emit no
+    # image_morphology -> None; the top-level host_galaxy is mirrored out of
+    # image_morphology.host_galaxy when v4 supplies it, else falls back to whatever
+    # the model volunteered.
+    img_morph = (parsed.get("reasoning") or {}).get("image_morphology")
     result = {
         "source_id": source_id,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -529,6 +536,8 @@ def save_result(source_id, parsed, raw_response, usage, mode, model, few_shot, c
         },
         "classification": parsed.get("classification", {}),
         "reasoning": parsed.get("reasoning", {}),
+        "image_morphology": img_morph,
+        "host_galaxy": (img_morph or {}).get("host_galaxy") or parsed.get("host_galaxy"),
         "quality": parsed.get("quality", {}),
         # Temporary layer as it applied to this run: collection + the effective
         # label definitions used for the prompt + normalised matches.

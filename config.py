@@ -114,4 +114,4 @@ for d in [SOURCES_DIR, RESULTS_DIR, ENRICHED_DIR]:
 
 # Prompt versioning
 PROMPTS_DIR = PROJECT_ROOT / "prompts"
-PROMPT_VERSION = os.environ.get("PROMPT_VERSION", "v3")  # v1 | v2 | v3
+PROMPT_VERSION = os.environ.get("PROMPT_VERSION", "v4")  # v1 | v2 | v3 | v4

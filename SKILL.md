@@ -172,7 +172,7 @@ LLM_MODEL=qwen3.6-chat
 
 API: USTC proxy at `https://api.llm.ustc.edu.cn/v1`, OpenAI-compatible.
 
-Current config (as of Aug 2026): `config.CLASSES = ["TDE", "SN", "AGN", "Others", "Unsure"]` (5 classes), `PROMPT_VERSION = "v2"` (system_v2.txt), model `qwen3.6-chat` (reasoning model — `content` field is the final answer, `reasoning_content` is the chain-of-thought; `call_api()` falls back to `reasoning_content` when `content` is None).
+Current config (as of Oct 2026): `config.CLASSES = ["TDE", "SN", "AGN", "Others", "Unsure"]` (5 classes), `PROMPT_VERSION = "v4"` (system_v4.txt, overridable via the `PROMPT_VERSION` env var; `v3` = v4 without the cutout morphology gate), model from `.env` (`LLM_MODEL`, currently `deepseek-flash`). Server-side reasoning (`SERVER_COT`, default false) is a net negative for this task; `call_api()` falls back to `reasoning_content` when `content` is empty.
 
 ## Unsure Category with Preference Direction
 
