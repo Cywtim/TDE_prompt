@@ -152,6 +152,34 @@ strong color/rise signals based on host alone.
   f_pre_var high + W1−W2 high → converging AGN evidence.
 - Weight ≤ 0.10 in isolation. Use as a cross-check, not a primary driver.
 
+### 9. Photometry-Only Fallback — host / WISE / Gaia data missing
+TDE, SN and AGN separation from photometric light-curve features ALONE is reliable and
+host-independent (host-agnostic classifier on survey photometry — Anilkumar, van Velzen,
+Kowalski & Reusch 2026, arXiv:2607.28510). Apply this rule whenever host-side data are
+unavailable:
+- A missing cutout, missing host galaxy, missing WISE color or missing Gaia Sep is NOT by
+  itself a reason to answer Unsure or Others. Decide from the photometric evidence that IS
+  present (§1–§4, §8).
+- Never fabricate host, WISE or Gaia values. If a field is absent from analysis.md, treat
+  that indicator as SKIPPED (§5–§7) — absence of evidence is NOT evidence against TDE/SN.
+  (When no cutout image exists the host section is omitted entirely; the same applies.)
+- Record the missing inputs in `quality.flags` so a reader can see what the call was based on.
+- Do NOT inflate the score to compensate for missing host data, and do NOT default to
+  Unsure: with host-side indicators skipped, a photometry-only call at a moderate score
+  (0.55–0.70) is preferred over an Unsure whenever the photometric evidence is consistent.
+
+Photometric feature checklist — use every item the data support; together they are
+sufficient for a host-independent classification:
+- rise timescale (or an upper limit when the rise is unresolved)
+- decay timescale / decline shape
+- peak-to-baseline contrast (Δm relative to any quiet baseline)
+- color evolution in g−r, u−g, u−r AND its rate of change through the decline
+- pre-transient variability f_pre_var (§8)
+- duration of the bright phase, and the spacing between local maxima
+- COLOR evolution is our proxy for blackbody temperature evolution: a monotonic blue→red
+  cooling trend during the decline is a strong single-burst (TDE-like) signature. Never
+  claim a blackbody temperature — no temperature fit exists in analysis.md.
+
 ## Decision Logic
 ### Step 0: Shape Gate — rule out non-TDE shapes FIRST
 These are STRUCTURAL exclusion criteria. If ANY trigger, classify directly
@@ -279,8 +307,14 @@ DO NOT default to 0.40 for Unsure — use the full range based on signal strengt
 
 UNCERTAINTY DISCOUNTS (apply BEFORE final score):
 - Color measurement unreliable (median |err| > 0.15 mag): −0.05
+- Color measurement UNUSABLE (median |err| > 0.30 mag): skip §1 color evidence entirely
 - Rise unresolved (< 5 points): skip rise indicators entirely
 - Sparse data (< 10 total points): cap score at 0.55
 - f_pre_var HIGH + W1−W2 LOW (contradiction): downgrade by −0.10
+- Host-side data missing (no cutout / no host / no WISE / no Gaia Sep): cap score at 0.70
+  but keep the LABEL decided from photometry (§9) — do not fall back to Unsure
+- Two or more discriminators unusable (large errors, unresolved rise, absent fields):
+  cap score at 0.55 — a source whose diagnostics carry large uncertainties must not
+  receive a confident label (uncertainty-aware rule, arXiv:2607.28510)
 
 {"classification":{"label":"{__CLASSES_STR__}","confidence":"high|medium|low","score":0.0-1.0,"unsure_preference":"{__REAL_STR__}|null"},"reasoning":{"primary_signal":"...","indicators":[{"name":"...","value":"...","weight":0.0-1.0,"direction":"{__REAL_STR__}"}]},"host_galaxy":{"available":false,"note":"no cutout image"},"quality":{"flags":[]}}
